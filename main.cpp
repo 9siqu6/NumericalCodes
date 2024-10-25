@@ -107,50 +107,77 @@ double fp(vector<double> vf, double x)
     return ((4*a*x*x*x)+(3*b*x*x)+(2*c*x)+d);
 }
 
-vector<double> newtonraphson(vector<double> vf,double x0)
+bool isUniqueRoot(vector<double> vc, double root)
 {
-    vector<double> vc;
-    vc.push_back(x0);
-    double fx=f(vf,x0);
-    double fpx=fp(vf,x0);
-    if(fpx==0){return vc;}
-    else{
-        double x1=x0-(fx/fpx);
-        vc.push_back(x1);
-        while(abs(x1-x0)>0.0001)
-        {
-            x0=x1;
-            fx=f(vf,x0);
-            fpx=fp(vf,x0);
-            if(fpx==0){return vc;}
-            else{
-                x1=x0-(fx/fpx);
-                vc.push_back(x1);
-            }
-        }
-        return vc;
-    }
-}
-vector<double> secant(vector<double> vf,double x1, double x2)
-{
-    double fx1=f(vf,x1);
-    double fx2=f(vf, x2);
-    vector<double> vc;
-    double x3=((x1*fx2) - (x2*fx1))/(fx2-fx1);
-    double fx3=f(vf, x3);
-    vc.push_back(x3);
-    while(abs(fx3)>0.0001)
+    for(double r:vc)
     {
-        x1=x2;
-        x2=x3;
-        fx1=f(vf, x1);
-        fx2=f(vf, x2);
-
-        if(fx1==fx2){return vc;}
-        x3=((x1*fx2) - (x2*fx1))/(fx2-fx1);
-        vc.push_back(x3);
-        fx3=f(vf, x3);
+        if(abs(r-root)<0.0001){return false;}
     }
+    return true;
+}
+vector<double> newtonraphson(vector<double> vf,int maxAt=50)
+{
+    vector<double> vc;
+    double tolr=0.001;
+
+    for(int i=-maxAt;i<maxAt;i++)
+    {
+        double x0= i - maxAt / 2;
+        double x1;
+        int maxIt=100;
+
+        for(int it=0;it<maxIt;it++)
+        {
+            double fx=f(vf,x0);
+            double fpx=fp(vf,x0);
+
+            if(fabs(fpx)<tolr){break;}
+
+            x1= x0- fx/fpx;
+
+            if(fabs(x1-x0)<tolr)
+            {
+                if(isUniqueRoot(vc,x1))
+                {
+                    vc.push_back(x1);
+                }
+                break;
+            }
+            x0=x1;
+        }
+    }
+    sort(vc.begin(),vc.end());
+    return vc;
+}
+vector<double> secant(vector<double> vf, int maxAt=50)
+{
+    vector<double> vc;
+    double tol=0.0001;
+
+    for(int i=-maxAt;i<maxAt;i++)
+    {
+        double x1=i;
+        double x2=i+1;
+        double fx1=f(vf,x1);
+        double fx2=f(vf,x2);
+        int maxIt=100;
+        for(int it=0;it<maxIt;it++)
+        {
+            if(fabs(fx2-fx1)<tol){break;}
+            double x3=(x1*fx2 - x2*fx1)/(fx2-fx1);
+            
+            if(fabs(f(vf,x3))<tol && isUniqueRoot(vc,x3))
+            {
+                vc.push_back(x3);
+                break;
+            }
+            x1=x2;
+            fx1=fx2;
+            x2=x3;
+            fx2=f(vf,x3);
+        }
+    }
+    sort(vc.begin(),vc.end());
     return vc;
 }
 
@@ -307,15 +334,33 @@ void prompt()
         if(choice==2){/*add false-position code here*/}
         if(choice==3)//secant
         {
-            vector<double> vc=secant(vec,0,1);
-            cout<<"x = "<<vc[vc.size()-1]<<endl;
-            cout<<"Iterations taken: "<<vc.size()<<endl;
+            vector<double> vc=secant(vec);
+            cout<<endl;
+            cout<<"x = ";
+            for(int i=0;i<vc.size();i++)
+            {
+                if(i==vc.size()-1)
+                {
+                    cout<<vc[i];
+                    continue;
+                }
+                cout<<vc[i]<<", ";
+            }cout<<endl;
         }
         if(choice==4)//newton-raphson
         {
-            vector<double> vc=newtonraphson(vec,0);
-            cout<<"x = "<<vc[vc.size()-1]<<endl;
-            cout<<"Iterations taken: "<<vc.size()<<endl;
+            vector<double> vc=newtonraphson(vec);
+            cout<<endl;
+            cout<<"x = ";
+            for(int i=0;i<vc.size();i++)
+            {
+                if(i==vc.size()-1)
+                {
+                    cout<<vc[i];
+                    continue;
+                }
+                cout<<vc[i]<<", ";
+            }cout<<endl;
         }
         returnToMainMenu();
     }
