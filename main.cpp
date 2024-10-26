@@ -4,6 +4,144 @@ using namespace std;
 
 //LINEAR EQUATIONS
 
+//Checking diagonally dominant for jacobi and gauss seidel
+bool diagonally_dominant(vector<vector<double>>&A) 
+{
+    int n=A.size();
+    for (int i=0;i<n;i++) 
+    {
+        double sum=0.0;
+        for(int j=0;j<n;j++) 
+        {
+            if (i!=j) 
+            {
+                sum+=(A[i][j]);
+            }
+        }
+        if (fabs(A[i][i])<sum) 
+        {
+            return false;
+        }
+    }
+    return true;
+}
+//Jacobi iteration function
+vector<double>Jacobi_iterative(vector<vector<double>>& mat,vector<double>&X,int Max_Ite,double tol) 
+{
+    int n=mat.size();
+    vector<vector<double>>A(n, vector<double>(n));
+    vector<double>B(n);
+    for (int i=0; i<n;i++) 
+    {
+        for (int j=0;j<n;j++) 
+        {
+            A[i][j]=mat[i][j];
+        }
+        B[i]=mat[i][n];
+    }
+    vector<double>res(n, 0.0);
+
+    if (!diagonally_dominant(A)) 
+    {
+        cout << "Matrix isn't diagonally dominant. Jacobi Iteration is not possible." << endl;
+        cout<<"May produce wrong results "<<endl<<endl;
+    }
+
+    vector<double>preX=X;
+    for (int iter=1; iter<=Max_Ite;iter++) 
+    {
+        for (int i=0;i<n;i++) 
+        {
+            double sum=B[i];
+            for (int j=0;j<n;j++)
+             {
+                if (j!=i) 
+                {
+                    sum-=A[i][j]*preX[j];
+                }
+            }
+            X[i]=sum/A[i][i];
+        }
+
+        double diff=0.0;
+        for (int i=0;i<n;i++)
+         {
+            diff=max(diff,fabs(X[i]-preX[i]));
+        }
+
+        if (diff<tol)
+         {cout<<endl;
+            cout<<"Converged in "<<iter<< " iterations."<<endl;
+            return X;
+        }
+        preX=X;
+    }
+    cout<<endl;
+        cout <<"Did not converge in " <<Max_Ite <<" iterations." <<endl;
+        cout<<endl;
+    return X;
+}
+
+//GaussSeidel iteration function 
+vector<double> GaussSeidel_iterative(vector<vector<double>>& mat, vector<double>& X, int Max_Ite, double tol)
+{
+    int n=mat.size();
+    vector<vector<double>>A(n, vector<double>(n));
+    vector<double>B(n);
+    
+    for (int i=0;i<n;i++)
+     {
+        for (int j=0;j<n;j++) 
+        {
+            A[i][j]=mat[i][j];
+        }
+        B[i]=mat[i][n];
+    }
+    cout<<endl;
+
+    if (!diagonally_dominant(A)) 
+    {
+        cout<<"Matrix isn't diagonally dominant. Gauss-Seidel Iteration may not converge."<<endl;
+        cout<<endl<<"May create wrong results"<<endl<<endl;
+    }
+
+    vector<double>preX=X;
+    for(int iter=1;iter<=Max_Ite;iter++)
+     {
+        for(int i=0;i<n;i++)
+         {
+            double sum=B[i];
+            for (int j=0; j<n;j++)
+             {
+                if (j!=i) 
+                {
+                    sum-=A[i][j]*X[j];
+                }
+            }
+            X[i]=sum/A[i][i];
+        }
+
+        double diff=0.0;
+        for (int i=0;i<n;i++) 
+        {
+            diff=max(diff,fabs(X[i]-preX[i]));
+        }
+
+        if (diff<tol) 
+        {
+            cout<<endl;
+            cout<<"Converged in "<<iter<<" iterations."<<endl;
+            return X;
+        }
+        preX=X;
+    }
+    cout<<endl;
+    cout <<"Did not converge in " <<Max_Ite <<" iterations." <<endl;
+
+    return X;
+}
+
+
 vector<vector<double>> gaussian(vector<vector<double>> mat)
 {
     int n = mat.size();
@@ -181,6 +319,115 @@ vector<double> secant(vector<double> vf, int maxAt=50)
     return vc;
 }
 
+
+//bisection method
+
+
+// function of checking probable intervals of roots existence
+vector<pair<double, double>>intervals(vector<double>&cof,double start,double end,double step) 
+{
+    vector<pair<double, double>>iv;
+    double a=start;
+    double b=a+step;
+    while (b<=end) 
+    {
+        if (f(cof,a)*f(cof,b)<=0) 
+        {
+            iv.push_back({a, b});
+        }
+        a=b;
+        b=a+step;
+    }
+    return iv;
+}
+//bisection algorithm funtion
+double bisection(vector<double>&cof,double a,double b,double tol) 
+{
+    double fa=f(cof,a);
+    double fb =f(cof,b);
+    if (fa*fb>=0) 
+    {
+        cout <<"Invalid interval"<<endl;
+        return NAN;
+    }
+
+    double c=a;
+    while ((b-a)>=tol) 
+    {
+        c = (a+b)/2;
+        double fc=f(cof,c);
+
+        if (fabs(fc)<tol) 
+        {
+            break;
+        } 
+        else if (fa*fc<0)
+         {
+            b=c;
+            fb=fc;
+        } 
+        else 
+        {
+            a=c;
+            fa=fc;
+        }
+    }
+    return c;
+}
+//function for finding all roots of polynomial by bisection
+vector<double> bisection_method_roots( vector<double>&cof,double a,double b,double tol,double step) 
+{
+    vector<double>roots;
+    auto iv=intervals(cof,a,b,step);
+
+    for (const auto&intv:iv) 
+    {
+        double a=intv.first;
+        double b=intv.second;
+        double root=bisection(cof,a,b,tol);
+        if (!isnan(root)) 
+        {
+            roots.push_back(root);
+        }
+    }
+    return roots;}
+
+
+//False Position method
+vector<double>false_position_method( vector<double>& cof,double a,double b,double tol,double step) 
+{vector<double>roots;
+     vector<pair<double, double>>iv=intervals(cof,a,b,step);
+   for(pair<double, double>intv:iv)
+ {
+    double a=intv.first,b=intv.second,c;
+        double f_a=f(cof,a);
+        double f_b=f(cof,b);
+        if(f_a*f_b>=0)
+            continue;
+        while((b-a)>=tol)
+        {
+            double root=b-f_b*(b-a)/(f_b-f_a);
+            double f_root=f(cof,root);
+            if(fabs(f_root)<tol)
+            {
+                roots.push_back(root);
+                break;
+            }
+            else if(f_a*f_root<0)
+            {
+                b=root;
+                f_b=f_root;
+            }
+            else
+            {
+                a=root;
+                f_a=f_root;
+            }
+        }
+    }
+    return roots;
+}
+
 //DIFFERENTIAL EQUATIONS SOLVE
 double f(double x,double y,double a, double b,  int type)
 {
@@ -284,8 +531,35 @@ void prompt()
         cout<<"Enter your choice: (1/2/3/4/5) ";
         int c;
         cin>>c;
-        if(c==1){/*jacobi*/}
-        if(c==2){/*gauss-seidel*/}
+        if(c==1)//jacobi
+        {
+            cout<<"Enter number of Iterations you want : "<<endl;
+            int it;
+            cin>>it;
+            vector<double>X(v,0.0);
+            vector<double>solve=Jacobi_iterative(mat,X,it,0.0001);
+            cout<<"Result:"<<endl;
+            for(int i=0;i<solve.size();i++)
+            {
+                cout<<"x["<<i+1<<"] = "<<solve[i]<<endl;
+            }
+            cout<<endl;
+        }
+        if(c==2)//gauss-seidel
+        {
+        /*gauss-seidel*/
+            cout<<"Enter number of Iterations you want : "<<endl;
+                    int it;
+                    cin>>it;
+            vector<double>X(v,0.0);
+            vector<double>solve=GaussSeidel_iterative(mat,X,it,0.0001);
+              cout<<"Result:"<<endl;
+            for(int i=0;i<solve.size();i++)
+            {
+                cout<<"x["<<i+1<<"] = "<<solve[i]<<endl;
+            }
+            cout<<endl;
+        }
         if(c==3)//gaussian
         {
             show_matrix(gaussian(mat));
@@ -330,8 +604,30 @@ void prompt()
         cout<<"Enter your choice: (1/2/3/4) ";
         int choice;
         cin>>choice;
-        if(choice==1){/*add bisection code here*/}
-        if(choice==2){/*add false-position code here*/}
+
+        if(choice==1)//bisection
+        {   
+            
+            vector<double>vv=bisection_method_roots(vec,-50,50,0.0001,0.1);
+            cout<<endl;
+            cout<<"x = ";
+            for(double  i : vv)
+            {
+                cout<<i<<" ";
+            }
+            cout<<endl;
+        }
+        if(choice==2)//false-position
+        {
+            vector<double>vvv=false_position_method(vec,-50,50,0.0001,0.1);
+            cout<<endl;
+            cout<<"x = ";
+            for(double  i : vvv)
+            {
+                cout<<i<<" ";
+            }
+            cout<<endl;
+        }
         if(choice==3)//secant
         {
             vector<double> vc=secant(vec);
