@@ -81,7 +81,6 @@ vector<double>Jacobi_iterative(vector<vector<double>>& mat,vector<double>&X,int 
         cout<<endl;
     return X;
 }
-
 //GaussSeidel iteration function 
 vector<double> GaussSeidel_iterative(vector<vector<double>>& mat, vector<double>& X, int Max_Ite, double tol)
 {
@@ -223,6 +222,83 @@ vector<vector<double>> gauss_jordan(vector<vector<double>> mat)
         }
     }
     return mat;
+}
+//LU factorization
+
+void LU_Factorization(vector<vector<double>> mat)
+{
+    vector<vector<double>> A_ext=mat;
+    int n=A_ext.size();
+    vector<vector<double>> A(n, vector<double>(n));
+    vector<double> b(n);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            A[i][j] = A_ext[i][j];
+        }
+        b[i] = A_ext[i][n];
+    }
+
+    vector<vector<double>> L(n, vector<double>(n));
+    vector<vector<double>> U(n, vector<double>(n));
+    vector<double> x(n);
+    vector<double> y(n);
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (i == j)
+                L[i][j] = 1;
+            else
+                L[i][j] = 0;
+            U[i][j] = 0;
+        }
+    }
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i; j < n; j++)
+        {
+            U[i][j] = A[i][j];
+            for (int k = 0; k < i; k++)
+            {
+                U[i][j] -= L[i][k] * U[k][j];
+            }
+        }
+        for (int j = i + 1; j < n; j++)
+        {
+            L[j][i] = A[j][i];
+            for (int k = 0; k < i; k++)
+            {
+                L[j][i] -= L[j][k] * U[k][i];
+            }
+            L[j][i] /= U[i][i];
+        }
+    }
+    for (int i = 0; i < n; i++)
+    {
+        y[i] = b[i];
+        for (int j = 0; j < i; j++)
+        {
+            y[i] -= L[i][j] * y[j];
+        }
+        y[i] /= L[i][i];
+    }
+    for (int i = n - 1; i >= 0; i--)
+    {
+        x[i] = y[i];
+        for (int j = i + 1; j < n; j++)
+        {
+            x[i] -= U[i][j] * x[j];
+        }
+        x[i] /= U[i][i];
+    }
+    cout << "The solution vector x is:" << endl;
+    for (int i = 0; i < n; i++)
+    {
+        cout << "x[" << i + 1 << "] = " << -1 * x[i] << endl;
+    }
 }
 
 //NON-LINEAR EQUATIONS
@@ -467,7 +543,66 @@ void show_rk(double a, double b, int t)
     }
 }
 //MATRIX INVERSION
+vector<vector<double>> matrix_inversion(vector<vector<double>> mat)
+{
+    int n = mat.size();
+    vector<vector<double>> idt(n, vector<double>(n, 0));
+    for (int i=0;i<n;i++)
+    {
+        idt[i][i] = 1.0;
+    }
+    for (int i=0;i<n;i++)
+    {
+        mat[i].insert(mat[i].end(), idt[i].begin(), idt[i].end());
+    }
+    for (int i=0;i<n;i++)
+    {
+        for (int k=i+1;k<n;k++)
+        {
+            if (abs(mat[i][i]) < abs(mat[k][i]))
+            {
+                swap(mat[i], mat[k]);
+            }
+        }
+        double pvt= mat[i][i];
+        if (pvt!=0)
+        {
+            for (int j=0;j<2*n;j++)
+            {
+                mat[i][j] /= pvt;
+            }
+        }
+        for (int k=i+1;k<n;k++)
+        {
+            double fc=mat[k][i];
+            for (int j=0; j<2*n;j++)
+            {
+                mat[k][j]-=fc*mat[i][j];
+            }
+        }
+    }
+    for (int i=n-1;i>=0;i--)
+    {
+        for (int k=i-1;k>=0;k--)
+        {
+            double fc=mat[k][i];
+            for (int j=0;j<2*n;j++)
+            {
+                mat[k][j] -= fc * mat[i][j];
+            }
+        }
+    }
+    vector<vector<double>> inv(n, vector<double>(n));
+    for (int i=0;i<n;i++)
+    {
+        for (int j=0;j<n;j++)
+        {
+            inv[i][j]= mat[i][j + n];
+        }
+    }
 
+    return inv;
+}
 
 //show_matrix
 void show_matrix(vector<vector<double>> mat)
@@ -547,7 +682,6 @@ void prompt()
         }
         if(c==2)//gauss-seidel
         {
-        /*gauss-seidel*/
             cout<<"Enter number of Iterations you want : "<<endl;
                     int it;
                     cin>>it;
@@ -579,6 +713,10 @@ void prompt()
             {
                 cout<<"x"<<i+1<<"="<<gm[i][gm.size()]<<endl;
             }
+        }
+        if(c==5)//LU-factorization
+        {
+            LU_Factorization(mat);
         }
         returnToMainMenu();
     }
@@ -675,7 +813,22 @@ void prompt()
     }
     if(x==4)
     {
+        int inp;
+        cout<<"Enter number of rows/columns of the matrix: ";
+        cin>>inp;
+        cout<<"Enter the matrix to invert: "<<endl;
+        vector<vector<double>> mat(inp,vector<double>(inp));
+        for(int i=0;i<inp;i++)
+        {
+            for(int j=0;j<inp;j++)
+            {
+                double x;
+                cin>>x;
+                mat[i][j]=x;
+            }
+        }
         //matrix inversion
+        show_matrix(matrix_inversion(mat));
         returnToMainMenu();
     }
     if(x==0)
